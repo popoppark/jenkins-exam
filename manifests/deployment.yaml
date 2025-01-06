@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: nginx:1.27.2-alpine
+        image: heeryun/grayweb:v2.0
         ports:
         - containerPort: 80
 ---
