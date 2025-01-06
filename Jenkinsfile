@@ -1,52 +1,59 @@
 pipeline {
     agent any
-
-    triggers {
-        // GitHub에서 Push 이벤트가 발생할 때 빌드 트리거
-        pollSCM('H/5 * * * *') // 5분마다 SCM을 폴링
+    environment {
+        BUILD_NUMBER = "v1.0"                           // 빌드 번호
+        IMAGE_NAME = "192.168.1.183/harbor-4th/my-app"  // Harbor 이미지 이름
+        HARBOR_CREDENTIALS = credentials('harbor-crendentials')      // Jenkins에 등록한 Harbor Credentials ID
+        GITHUB_CREDENTIALS = credentials('github-token') // GitHub 자격증명
     }
-
     stages {
-        stage('Checkout') {
+        stage('Checkout Source Code') {
             steps {
-                // 코드 리포지토리 체크아웃
-                git url: 'https://github.com/popoppark/jenkins-exam.git', branch: 'main'
+                git branch: 'main',
+                    credentialsId: 'github-token', // GitHub 자격증명 ID
+                    url: 'https://github.com/popoppark/jenkins-exam.git'
             }
         }
-
-        stage('Validate HTML') {
+        stage('Build Docker Image') {
             steps {
-                // HTML 파일을 검증하는 단계
                 script {
-                    // HTMLLint 검증 도구를 사용.
-                    sh 'htmlhint index.html'
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
                 }
             }
         }
-
-        stage('Build') {
+        stage('Push Docker Image to Harbor') {
             steps {
-                // 빌드 단계 (필요시 추가())
-                echo 'Building the project...'
-                // 필요한 빌드 명령어 추가
+                script {
+                    sh "echo ${HARBOR_CREDENTIALS_PSW} | docker login -u ${HARBOR_CREDENTIALS_USR} --password-stdin 192.168.1.183"
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                }
             }
         }
-
-        stage('Deploy') {
+        stage('Update Kubernetes Manifest') {
             steps {
-                // 배포 단계
-                echo 'Deploying the application...'
-                // 실제 배포 명령어 추가 (예: FTP 전송, AWS S3 업로드 등)
+                script {
+                    // GitHub에서 Kubernetes manifest 파일 체크아웃
+                    sh 'git config user.email "jenkins@yourdomain.com"'
+                    sh 'git config user.name "Jenkins CI"'
+                    // deployment.yaml의 image 태그 업데이트
+                    sh """
+                        sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|g' manifests/deployment.yaml
+                    """
+                    sh "git add manifests/deployment.yaml"
+                    sh "git commit -m '[UPDATE] Updated to image version ${BUILD_NUMBER}'"
+                    // GitHub에 커밋 푸시
+                    sh "git push https://github-token@github.com/popoppark/jenkins-exam.git main"
+                }
             }
         }
     }
-
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo "Pipeline executed successfully!"
         }
         failure {
-            echo 'Pipeline failed. Check the logs.'
+            echo "Pipeline execution failed!"
         }
     }
 }
+
