@@ -1,5 +1,5 @@
 # Base image
-FROM nginx:latest
+FROM nginx:1.27.2-alpine
 
 # Copy custom HTML file to Nginx default directory
 COPY index.html /usr/share/nginx/html/
