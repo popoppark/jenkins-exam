@@ -2,8 +2,8 @@ pipeline {
     agent any
     environment {
         BUILD_NUMBER = "v1.0"
-        IMAGE_NAME = "192.168.1.183/harbor-4th/my-app"
-        HARBOR_CREDENTIALS = credentials('harbor-crendentials')
+        IMAGE_NAME = "192.168.1.183/my-app/heeryun"
+        HARBOR_CREDENTIALS = credentials('harbor')
         GITHUB_CREDENTIALS = credentials('github-token')
     }
     stages {
