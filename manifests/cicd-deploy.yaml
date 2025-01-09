@@ -30,7 +30,11 @@ spec:
               value: k8spass#
             - name: MYSQL_USER
               value: kevin
+
           image: 192.168.1.183:443/myapp/front:v3.0
+
+
+
           name: mysqldb
           ports:
             - containerPort: 3306
