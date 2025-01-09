@@ -1,4 +1,4 @@
-peline {
+pipeline {
     agent any
     environment {
         BUILD_NUMBER = "v1.0"
