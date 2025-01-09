@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        BUILD_NUMBER = "v6.0"
+        BUILD_NUMBER = "6.0"
         IMAGE_NAME = "192.168.1.183:443/myapp/front"
         HARBOR_CREDENTIALS = credentials('harbor')
         GITHUB_CREDENTIALS = credentials('github-token')
