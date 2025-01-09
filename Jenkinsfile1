@@ -3,11 +3,19 @@ pipeline {
     environment {
         ORIGINAL_IMAGE = "192.168.1.183:443/myapp/front:2.0"
         NEW_IMAGE = "192.168.1.183:443/myapp/front"
-        NEW_TAG = "f1.0"
+        NEW_TAG = "4.0"
         HARBOR_CREDENTIALS = credentials('harbor')          // Harbor 인증 정보
         GITHUB_CREDENTIALS = credentials('github-token')    // GitHub 인증 정보
     }
     stages {
+        stage('Clone repository') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/popoppark/jenkins-exam.git'
+            }
+        }
+
         stage('Check Jenkinsfile Change') {
             when {
                 changeset "**/Jenkinsfile"
@@ -53,8 +61,6 @@ pipeline {
                     sh "git config user.email 'wss2018@gmail.com'"
                     sh "git config user.name 'popoppark'"
 
-                    // 최신 변경사항 가져오기
-                    sh 'git pull --rebase origin main'
 
                     // 매니페스트 파일 업데이트
                     sh """
