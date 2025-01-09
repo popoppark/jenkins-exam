@@ -16,7 +16,7 @@ spec:
         app: frontend
     spec:
       containers:
-        - image: sinaeng/front-cicd:1.0
+        - image: 192.168.1.183:443/myapp/front:3
           env:
             - name: ACCOUNTBOOK_API_ADDR
               value: backend.default
