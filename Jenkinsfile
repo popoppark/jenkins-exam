@@ -1,8 +1,8 @@
 pipeline {
     agent any
     environment {
-        BUILD_NUMBER = "v2.0"
-        IMAGE_NAME = "192.168.1.183/my-app/heeryun"
+        BUILD_NUMBER = "v3.0"
+        IMAGE_NAME = "192.168.1.183:443/my-app/heeryun"
         HARBOR_CREDENTIALS = credentials('harbor')
         GITHUB_CREDENTIALS = credentials('github-token')
     }
@@ -26,7 +26,7 @@ pipeline {
         stage('Push Docker Image to Harbor') {
             steps {
                 script {
-                    sh "echo ${HARBOR_CREDENTIALS_PSW} | docker login -u ${HARBOR_CREDENTIALS_USR} --password-stdin 192.168.1.183"
+                    sh "echo ${HARBOR_CREDENTIALS_PSW} | docker login -u ${HARBOR_CREDENTIALS_USR} --password-stdin 192.168.1.183:443"
                     sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                 }
             }
