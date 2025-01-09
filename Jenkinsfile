@@ -37,7 +37,7 @@ pipeline {
                 script {
                     sh "git config user.email 'wss2018@gmail.com'"
                     sh "git config user.name 'popoppark'"
-
+                    sh 'git pull --rebase origin main'
                     sh """
                         sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|g' manifests/cicd-deploy.yaml
                     """
