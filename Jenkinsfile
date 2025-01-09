@@ -39,7 +39,7 @@ pipeline {
                     sh "git config user.name 'popoppark'"
 
                     sh """
-                        sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|g' manifests/deployment.yaml
+                        sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|g' manifests/cicd-deploy.yaml
                     """
                     sh "git add manifests/cicd-deploy.yaml"
                     sh "git commit -m '[UPDATE] Updated to image version ${BUILD_NUMBER}'"
