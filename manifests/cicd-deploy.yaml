@@ -34,7 +34,6 @@ spec:
           name: mysqldb
           ports:
             - containerPort: 3306
-              hostPort: 3306
               protocol: TCP
           resources: {}
 ---
@@ -83,7 +82,6 @@ spec:
           name: backend
           ports:
             - containerPort: 8080
-              hostPort: 8080
               protocol: TCP
           volumeMounts:
           - name: gcp-key-volume
@@ -141,8 +139,6 @@ spec:
           name: frontend
           ports:
             - containerPort: 3000
-              hostPort: 3000
-              protocol: TCP
           volumeMounts:
           - name: ocr-image-volume
             mountPath: /frontend/ocrImage
