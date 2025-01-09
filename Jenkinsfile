@@ -1,19 +1,20 @@
 pipeline {
     agent any
     environment {
-        BUILD_NUMBER = "v1.0"                           
-        IMAGE_NAME = "192.168.1.183/harbor-4th/my-app"  
-        HARBOR_CREDENTIALS = credentials('harbor-crendentials')     
-        GITHUB_CREDENTIALS = credentials('github-token') 
+        BUILD_NUMBER = "v1.0"
+        IMAGE_NAME = "192.168.1.183/harbor-4th/my-app"
+        HARBOR_CREDENTIALS = credentials('harbor-crendentials')
+        GITHUB_CREDENTIALS = credentials('github-token')
     }
     stages {
-        stage('Checkout Source Code') {
+        stage('Clone repository') { // 추가된 stage
             steps {
-                git branch: 'main',
-                    credentialsId: 'github-token', 
-                    url: 'https://github.com/popoppark/jenkins-exam.git'
+                git branch: 'main', // 원하는 브랜치 이름
+                    credentialsId: 'github-token', // Jenkins에서 설정한 GitHub 인증 ID
+                    url: 'https://github.com/popoppark/jenkins-exam.git' // 클론할 레포지토리 URL
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -21,6 +22,7 @@ pipeline {
                 }
             }
         }
+
         stage('Push Docker Image to Harbor') {
             steps {
                 script {
@@ -29,19 +31,19 @@ pipeline {
                 }
             }
         }
+
         stage('Update Kubernetes Manifest') {
             steps {
                 script {
-                    
                     sh 'git config user.email "jenkins@yourdomain.com"'
                     sh 'git config user.name "Jenkins CI"'
-                    
+
                     sh """
                         sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|g' manifests/deployment.yaml
                     """
                     sh "git add manifests/deployment.yaml"
                     sh "git commit -m '[UPDATE] Updated to image version ${BUILD_NUMBER}'"
-                   
+
                     sh "git push https://github-token@github.com/popoppark/jenkins-exam.git main"
                 }
             }
