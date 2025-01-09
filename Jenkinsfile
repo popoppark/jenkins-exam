@@ -1,39 +1,24 @@
 pipeline {
     agent any
     environment {
-        ORIGINAL_IMAGE = "192.168.1.183:443/myapp/front:2.0"
-        NEW_IMAGE = "192.168.1.183:443/myapp/front"
-        NEW_TAG = "7.0"
-        MANIFEST_FILE = "manifests/cicd-deploy.yaml"
-        HARBOR_CREDENTIALS = credentials('harbor')          // Harbor 인증 정보
-        GITHUB_CREDENTIALS = credentials('github-token')    // GitHub 인증 정보
+        BUILD_NUMBER = "v4.0"
+        IMAGE_NAME = "192.168.1.183:443/myapp/front"
+        HARBOR_CREDENTIALS = credentials('harbor')
+        GITHUB_CREDENTIALS = credentials('github-token')
     }
     stages {
-        stage('Check Jenkinsfile Change') {
-            when {
-                changeset "**/Jenkinsfile"
-            }
+        stage('Clone repository') {
             steps {
-                echo "Jenkinsfile has changed. Proceeding with the pipeline."
-            }
-        }
-
-        stage('Login to Harbor and Pull Existing Image') {
-            steps {
-                script {
-                    echo "Logging into Harbor"
-                    sh "echo ${HARBOR_CREDENTIALS_PSW} | docker login -u ${HARBOR_CREDENTIALS_USR} --password-stdin 192.168.1.183:443"
-                    echo "Pulling existing image: ${ORIGINAL_IMAGE}"
-                    sh "docker pull ${ORIGINAL_IMAGE}"
-                }
+                git branch: 'main',
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/popoppark/jenkins-exam.git'
             }
         }
 
-        stage('Retag Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Retagging image to: ${NEW_IMAGE}:${NEW_TAG}"
-                    sh "docker tag ${ORIGINAL_IMAGE} ${NEW_IMAGE}:${NEW_TAG}"
+                    sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
                 }
             }
         }
@@ -41,8 +26,8 @@ pipeline {
         stage('Push Docker Image to Harbor') {
             steps {
                 script {
-                    echo "Pushing new image: ${NEW_IMAGE}:${NEW_TAG}"
-                    sh "docker push ${NEW_IMAGE}:${NEW_TAG}"
+                    sh "echo ${HARBOR_CREDENTIALS_PSW} | docker login -u ${HARBOR_CREDENTIALS_USR} --password-stdin 192.168.1.183:443"
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                 }
             }
         }
@@ -50,23 +35,16 @@ pipeline {
         stage('Update Kubernetes Manifest') {
             steps {
                 script {
-                    // Git 설정
                     sh "git config user.email 'wss2018@gmail.com'"
                     sh "git config user.name 'popoppark'"
 
-                    // 최신 변경사항 가져오기
-                    sh 'git pull --rebase origin main'
-
-                    // 매니페스트 파일 업데이트
                     sh """
-                        sed -i 's|image: .*|image: ${NEW_IMAGE}:${NEW_TAG}|g' ${MANIFEST_FILE}
+                        sed -i 's|image: .*|image: ${IMAGE_NAME}:${BUILD_NUMBER}|g' manifests/cicd-deploy.yaml
                     """
+                    sh "git add manifests/cicd-deploy.yaml"
+                    sh "git commit -m '[UPDATE] Updated to image version ${BUILD_NUMBER}'"
 
-                    // 변경사항 커밋
-                    sh "git add ${MANIFEST_FILE}"
-                    sh "git commit -m '[UPDATE] Updated to image version ${NEW_TAG}'"
-
-                    // 변경사항 Push
+                    // 수정: Personal Access Token을 URL에 포함하여 Push
                     sh """
                         git push https://${env.GITHUB_CREDENTIALS_USR}:${env.GITHUB_CREDENTIALS_PSW}@github.com/popoppark/jenkins-exam.git main
                     """
