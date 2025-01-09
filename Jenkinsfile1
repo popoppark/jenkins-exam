@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+    environment {
+        ORIGINAL_IMAGE = "192.168.1.183:443/myapp/front:2.0"  // 기존 이미지
+        NEW_IMAGE = "192.168.1.183:443/myapp/front"          // 새 이미지 이름 (태그 없이)
+        NEW_TAG = "4.0"                                      // 새 태그
+        MANIFEST_FILE = "manifests/cicd-deploy.yaml"         // Kubernetes manifest 파일 경로
+        HARBOR_CREDENTIALS = credentials('harbor')          // Harbor 인증 정보
+        GITHUB_CREDENTIALS = credentials('github-token')    // GitHub 인증 정보
+    }
+    stages {
+        stage('Check Jenkinsfile Change') {
+            when {
+                changeset "**/Jenkinsfile" // Jenkinsfile 변경 시에만 실행
+            }
+            steps {
+                echo "Jenkinsfile has changed. Proceeding with the pipeline."
+            }
+        }
+
+        stage('Login to Harbor and Pull Existing Image') {
+            steps {
+                script {
+                    // Harbor 로그인
+                    echo "Logging into Harbor"
+                    sh "echo ${HARBOR_CREDENTIALS_PSW} | docker login -u ${HARBOR_CREDENTIALS_USR} --password-stdin 192.168.1.183:443"
+
+                    // 기존 이미지 Pull
+                    echo "Pulling existing image: ${ORIGINAL_IMAGE}"
+                    sh "docker pull ${ORIGINAL_IMAGE}"
+                }
+            }
+        }
+
+        stage('Retag Docker Image') {
+            steps {
+                script {
+                    // 기존 이미지 Retag
+                    echo "Retagging image to: ${NEW_IMAGE}:${NEW_TAG}"
+                    sh "docker tag ${ORIGINAL_IMAGE} ${NEW_IMAGE}:${NEW_TAG}"
+                }
+            }
+        }
+
+        stage('Push Docker Image to Harbor') {
+            steps {
+                script {
+                    // 새 태그의 이미지 Push
+                    echo "Pushing new image: ${NEW_IMAGE}:${NEW_TAG}"
+                    sh "docker push ${NEW_IMAGE}:${NEW_TAG}"
+                }
+            }
+        }
+
+        stage('Update Kubernetes Manifest') {
+            steps {
+                script {
+                    // Git 설정
+                    echo "Configuring Git settings"
+                    sh "git config user.email 'wss2018@gmail.com'"
+                    sh "git config user.name 'popoppark'"
+
+                    // 최신 변경사항 Pull
+                    echo "Pulling latest changes"
+                    sh "git pull --rebase origin main"
+
+                    // manifest 파일 업데이트
+                    echo "Updating Kubernetes manifest file"
+                    sh """
+                        sed -i 's|image: .*|image: ${NEW_IMAGE}:${NEW_TAG}|g' ${MANIFEST_FILE}
+                    """
+
+                    // 변경사항 커밋 및 Push
+                    echo "Committing and pushing manifest updates"
+                    sh "git add ${MANIFEST_FILE}"
+                    sh "git commit -m '[UPDATE] Updated to image version ${NEW_TAG}'"
+                    sh """
+                        git push https://${env.GITHUB_CREDENTIALS_USR}:${env.GITHUB_CREDENTIALS_PSW}@github.com/popoppark/jenkins-exam.git main
+                    """
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo "Pipeline executed successfully!"
+        }
+        failure {
+            echo "Pipeline execution failed!"
+        }
+    }
+}
+
