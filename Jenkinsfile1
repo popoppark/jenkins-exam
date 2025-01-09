@@ -3,7 +3,7 @@ pipeline {
     environment {
         ORIGINAL_IMAGE = "192.168.1.183:443/myapp/front:2.0"
         NEW_IMAGE = "192.168.1.183:443/myapp/front"
-        NEW_TAG = "f1.0"
+        NEW_TAG = "3"
         HARBOR_CREDENTIALS = credentials('harbor')          // Harbor 인증 정보
         GITHUB_CREDENTIALS = credentials('github-token')    // GitHub 인증 정보
     }
@@ -61,7 +61,7 @@ pipeline {
                     sh "git config user.email 'wss2018@gmail.com'"
                     sh "git config user.name 'popoppark'"
 
-
+                    sh 'git pull --rebase origin main'
                     // 매니페스트 파일 업데이트
                     sh """
                         sed -i 's|image: .*|image: ${NEW_IMAGE}:${NEW_TAG}|g' manifests/cicd-deploy.yaml
