@@ -30,7 +30,7 @@ spec:
               value: k8spass#
             - name: MYSQL_USER
               value: kevin
-          image: sinaeng/db-cicd:1.0
+          image: 192.168.1.183:443/myapp/db:2.0
           name: mysqldb
           ports:
             - containerPort: 3306
@@ -78,7 +78,7 @@ spec:
               value: root
             - name: MYSQL_PASSWORD
               value: k8spass#
-          image: sinaeng/back-cicd:2.0
+          image: 192.168.1.183:443/myapp/back:2.0
           name: backend
           ports:
             - containerPort: 8080
@@ -132,7 +132,7 @@ spec:
         app: frontend
     spec:
       containers:
-        - image: sinaeng/front-cicd:2.0
+        - image: 192.168.1.183:443/myapp/front
           env:
             - name: ACCOUNTBOOK_API_ADDR
               value: backend.default
